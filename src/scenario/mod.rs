@@ -1,9 +1,14 @@
-//! Scenario layer: glue between pure chess rules and game-search objectives.
+//! Scenario layer: glue between pure rules and game-search objectives.
 //!
-//! This module defines:
-//! - `State`: a piece placement plus an optional absolute black-king anchor
-//! - `Scenario`: a fully specified search configuration (rules + laws + domain + limits)
-//! - Traits for `LawsLike`, `DomainLike`, and `PreferencesLike`
+//! A [`Scenario`] bundles:
+//! - pure chess [`Rules`]
+//! - scenario-specific restrictions (**laws**) via [`LawsLike`]
+//! - the modeled “inside” set (**domain**) via [`DomainLike`]
+//! - optional tie-breakers (**preferences**) via [`PreferencesLike`]
+//! - explicit budgets via [`ResourceLimits`]
+//!
+//! This separation keeps the core rules reusable and makes the semantics of “trap vs boundary”
+//! explicit: leaving the domain is *allowed*, but it may count as escape depending on objective.
 
 use std::fmt;
 
@@ -13,6 +18,7 @@ use crate::core::coord::Coord;
 use crate::core::position::Position;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Side to move in a game state.
 pub enum Side {
     Black,
     White,
@@ -22,9 +28,14 @@ pub enum Side {
 ///
 /// - `pos` is stored in king-relative coordinates (black king at origin).
 /// - `abs_king` is an optional absolute anchor used only when a scenario needs absolute constraints.
+///
+/// When `Scenario.track_abs_king == false`, this value must be [`Coord::ORIGIN`], and black moves
+/// keep it unchanged (translation-reduced state space).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct State {
+    /// Absolute black king coordinate (only meaningful if `track_abs_king=true`).
     pub abs_king: Coord,
+    /// White piece placement in king-relative coordinates.
     pub pos: Position,
 }
 
@@ -36,12 +47,20 @@ impl State {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// A required scenario start state (no objective can run without it).
 pub struct StartState {
     pub to_move: Side,
     pub state: State,
 }
 
 #[derive(Debug, Clone, Copy)]
+/// Search budgets used to bound memory/time consumption.
+///
+/// These are not exact byte limits, but correlate strongly with allocation size:
+/// - `max_states`: number of states admitted to candidate sets / graphs
+/// - `max_edges`: number of generated moves/edges
+/// - cache limits: number of cached entries and total cached moves
+/// - `max_runtime_steps`: generic loop-iteration guard
 pub struct ResourceLimits {
     pub max_states: usize,
     pub max_edges: usize,
@@ -63,6 +82,7 @@ impl Default for ResourceLimits {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
+/// Running counters tracked during a search.
 pub struct ResourceCounts {
     pub states: u64,
     pub edges: u64,
@@ -72,10 +92,11 @@ pub struct ResourceCounts {
 }
 
 #[derive(Debug)]
+/// Structured errors returned by search routines.
 pub enum SearchError {
-    InvalidScenario {
-        reason: String,
-    },
+    /// The scenario is internally inconsistent (e.g. invalid start).
+    InvalidScenario { reason: String },
+    /// A configured resource limit was exceeded.
     LimitExceeded {
         stage: &'static str,
         metric: &'static str,
@@ -83,11 +104,13 @@ pub enum SearchError {
         observed: u64,
         counts: ResourceCounts,
     },
+    /// A `try_reserve` allocation failed for a large structure.
     AllocationFailed {
         stage: &'static str,
         structure: &'static str,
         counts: ResourceCounts,
     },
+    /// I/O failure (used by data-backed scenarios).
     Io {
         stage: &'static str,
         path: String,
@@ -138,10 +161,20 @@ impl fmt::Display for SearchError {
 
 impl std::error::Error for SearchError {}
 
+/// Domain membership predicate (“inside vs outside”).
+///
+/// Domain is not legality: moves may leave the domain. Objectives interpret leaving as escape/win
+/// conditions depending on the solver.
 pub trait DomainLike {
     fn inside(&self, s: &State) -> bool;
 }
 
+/// Scenario-specific legality filters.
+///
+/// These are applied after pure move generation:
+/// - `allow_state` can reject states (e.g. forbid overlaps beyond pure rules, clamp to a region)
+/// - `allow_black_move` / `allow_white_move` can reject specific transitions
+/// - `allow_pass` controls whether a pass is allowed at a given state (used by tempo trap)
 pub trait LawsLike {
     #[inline]
     fn allow_state(&self, _s: &State) -> bool {
@@ -165,7 +198,9 @@ pub trait LawsLike {
 }
 
 pub trait PreferencesLike {
+    /// Return an ordering (indices into `moves`) to be used when choosing a black move for demos.
     fn rank_black_moves(&self, from: &State, moves: &[State]) -> Vec<usize>;
+    /// Return an ordering (indices into `moves`) to be used when choosing a white move for demos.
     fn rank_white_moves(&self, from: &State, moves: &[State]) -> Vec<usize>;
 }
 
@@ -195,20 +230,31 @@ impl PreferencesLike for NoPreferences {
 }
 
 #[derive(Debug, Clone)]
+/// How to build the candidate set for trap search.
 pub enum CandidateGeneration {
+    /// Enumerate all canonical placements within an L∞ bound (relative coordinates).
     InLinfBound { bound: i32, allow_captures: bool },
+    /// Use an explicitly provided list of candidate states (e.g. file-backed or geometry-backed).
     FromStates { states: Vec<State> },
+    /// Explore states reachable from the required `start` (often much smaller than enumeration).
     ReachableFromStart { max_queue: usize },
 }
 
 #[derive(Debug, Clone, Copy)]
+/// Move-caching policy for search routines.
 pub enum CacheMode {
+    /// No caching (lower memory, slower).
     None,
+    /// Cache only black moves.
     BlackOnly,
+    /// Cache both black and white moves (bounded by [`ResourceLimits`]).
     BothBounded,
 }
 
 #[derive(Debug, Clone)]
+/// A fully specified search configuration.
+///
+/// `Scenario::validate()` checks invariants such as start legality and candidate compatibility.
 pub struct Scenario<D, L, P> {
     pub name: &'static str,
     pub rules: Rules,
@@ -225,6 +271,7 @@ pub struct Scenario<D, L, P> {
 }
 
 impl<D: DomainLike, L: LawsLike, P> Scenario<D, L, P> {
+    /// Validate scenario invariants. Intended to be called by CLIs/tests before running solvers.
     pub fn validate(&self) -> Result<(), SearchError> {
         let s = &self.start.state;
 

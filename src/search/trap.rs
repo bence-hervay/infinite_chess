@@ -1,3 +1,13 @@
+//! Trap and tempo-trap solvers.
+//!
+//! The core objective is “inescapable trap”:
+//! a black-to-move state is in the trap iff for every legal black move there exists a legal white
+//! reply that stays inside the current set (greatest fixed point).
+//!
+//! Domain membership is handled *by the candidate set*: candidates are states that satisfy
+//! `domain.inside(state)`. Leaving the domain is allowed by the rules and laws, but then White may
+//! fail to reply back into the candidate set, which is how “escape” is modeled.
+
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -223,6 +233,9 @@ where
 }
 
 /// Compute the maximal *tempo* trap inside an already-computed inescapable trap.
+///
+/// A tempo trap is a Büchi objective: White must be able to stay inside the inescapable trap
+/// forever *and* force infinitely many visits to "passable" white-to-move states.
 pub fn maximal_tempo_trap<D, L, P>(
     scn: &Scenario<D, L, P>,
     inescapable: &FxHashSet<State>,

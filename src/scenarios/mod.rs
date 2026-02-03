@@ -1,4 +1,14 @@
-//! Built-in scenarios (compile-time configs).
+//! Built-in scenarios.
+//!
+//! Scenarios live in Rust code so they can bundle:
+//! - piece layout + `move_bound` (pure rules)
+//! - a required start state
+//! - candidate generation strategy (enumeration / reachable exploration / file-backed sets)
+//! - optional laws/domain/preferences and resource limits
+//!
+//! To add a new scenario:
+//! 1) create a constructor function (e.g. `pub fn my_scenario() -> BuiltInScenario`)
+//! 2) add it to [`by_name`] and [`names`]
 
 pub mod nbb;
 

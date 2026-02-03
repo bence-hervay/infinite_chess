@@ -1,3 +1,12 @@
+//! Data-backed NBB scenario.
+//!
+//! This scenario loads a precomputed candidate set from `tests/data/kNBB_20_3_2.5_23.txt`,
+//! originally produced by an external script. It is useful as a regression / existence proof
+//! that “bishops + knight can trap the king” under a bounded slider model.
+//!
+//! The file encodes **absolute** coordinates, so this scenario sets `track_abs_king=true` and
+//! stores the black king anchor in [`State::abs_king`](crate::scenario::State::abs_king).
+
 use std::path::{Path, PathBuf};
 
 use crate::chess::layout::PieceLayout;

@@ -1,3 +1,8 @@
+//! Mate enumeration utilities.
+//!
+//! These helpers enumerate positions within an L∞ bound, but always apply **infinite-board**
+//! legality: the slice boundary is never treated as a wall for black king movement.
+
 use crate::chess::bounds::enumerate_positions_in_bound;
 use crate::chess::rules::Rules;
 

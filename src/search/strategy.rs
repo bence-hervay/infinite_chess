@@ -1,3 +1,11 @@
+//! Strategy extraction helpers.
+//!
+//! Search routines compute *sets* (winning regions / trap sets). For demos or interactive play you
+//! often want a concrete “what should White do here?” choice.
+//!
+//! The helpers here extract a memoryless strategy *after* correctness-critical computation.
+//! Preferences are used only as tie-breakers and do not affect trap set membership.
+
 use rustc_hash::FxHashMap;
 
 use crate::scenario::{DomainLike, LawsLike, PreferencesLike, Scenario, SearchError, State};

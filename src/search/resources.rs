@@ -1,6 +1,16 @@
+//! Resource tracking and allocation guards for search routines.
+//!
+//! Searches can explode combinatorially. To avoid hard OOM aborts, solvers use:
+//! - counter-based budgets ([`crate::scenario::ResourceLimits`])
+//! - `try_reserve` wrappers to surface allocation failures as [`crate::scenario::SearchError`]
+//!
+//! The tracker is intentionally lightweight: budgets are approximate but correlate strongly with
+//! memory usage.
+
 use crate::scenario::{ResourceCounts, ResourceLimits, SearchError};
 
 #[derive(Debug, Clone)]
+/// Tracks budgets/counters during a search.
 pub struct ResourceTracker {
     limits: ResourceLimits,
     counts: ResourceCounts,

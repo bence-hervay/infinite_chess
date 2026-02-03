@@ -1,6 +1,14 @@
+//! Laws-aware move generation helpers.
+//!
+//! These functions:
+//! - start from pure chess move generation (`Rules`)
+//! - apply scenario legality filters (`LawsLike`)
+//! - never apply domain membership (`DomainLike`) — objectives decide how to interpret “outside”.
+
 use crate::scenario::{DomainLike, LawsLike, Scenario, SearchError, State};
 use crate::search::resources::ResourceTracker;
 
+/// Legal black king moves from a state under the scenario's laws.
 pub fn legal_black_moves<D, L, P>(
     scn: &Scenario<D, L, P>,
     laws: &L,
@@ -37,6 +45,9 @@ where
     Ok(out)
 }
 
+/// Legal white moves from a state under the scenario's laws.
+///
+/// If `Scenario.white_can_pass` and `laws.allow_pass` are true, includes a "pass" move (identity).
 pub fn legal_white_moves<D, L, P>(
     scn: &Scenario<D, L, P>,
     laws: &L,
@@ -73,6 +84,7 @@ where
     Ok(out)
 }
 
+/// Checkmate under scenario laws (black in check and has no legal black move).
 pub fn is_checkmate_with_laws<D, L, P>(
     scn: &Scenario<D, L, P>,
     laws: &L,
@@ -92,6 +104,7 @@ where
     Ok(legal_black_moves(scn, laws, s, tracker)?.is_empty())
 }
 
+/// Stalemate under scenario laws (black not in check and has no legal black move).
 pub fn is_stalemate_with_laws<D, L, P>(
     scn: &Scenario<D, L, P>,
     laws: &L,
