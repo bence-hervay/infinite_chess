@@ -3,8 +3,5 @@ name = "infinite_chess"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "infinite_chess"
-path = "src/lib.rs"
-
 [dependencies]
+rustc-hash = "1.1"
