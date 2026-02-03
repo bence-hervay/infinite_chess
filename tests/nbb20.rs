@@ -5,6 +5,8 @@ use infinite_chess::search::trap::{maximal_inescapable_trap, maximal_tempo_trap}
 /// it loads a ~8.5MB reference trap set and then runs the fixed-point pruning algorithm,
 /// which can be slow and memory-hungry.
 ///
+/// The reference file lives at `tests/data/kNBB_20_3_2.5_23.txt`.
+///
 /// Run with:
 /// `cargo test --release -- --ignored nbb20_from_file_has_nonempty_trap_sets`
 #[test]

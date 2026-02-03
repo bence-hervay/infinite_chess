@@ -16,7 +16,17 @@ pub fn nbb20_from_file() -> Result<Scenario<AllDomain, NoLaws, NoPreferences>, S
     let layout = PieceLayout::from_counts(false, 0, 0, 2, 1); // B B N
     let rules = Rules::new(layout.clone(), 23);
 
-    let states = parse_k_nbb_trap_file(&path, &layout, &rules)?;
+    let states = parse_k_nbb_trap_file(&path, &layout, &rules).or_else(|e| {
+        let fallback = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("BBN_script")
+            .join("InfiniteChessEndgameScripts")
+            .join("kNBB_20_3_2.5_23.txt");
+        if fallback != path {
+            parse_k_nbb_trap_file(&fallback, &layout, &rules)
+        } else {
+            Err(e)
+        }
+    })?;
 
     let start = states
         .first()
@@ -46,8 +56,8 @@ pub fn nbb20_from_file() -> Result<Scenario<AllDomain, NoLaws, NoPreferences>, S
 
 fn default_trap_file_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("BBN_script")
-        .join("InfiniteChessEndgameScripts")
+        .join("tests")
+        .join("data")
         .join("kNBB_20_3_2.5_23.txt")
 }
 
