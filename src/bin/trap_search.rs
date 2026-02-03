@@ -12,24 +12,56 @@ fn main() {
     }
 
     let scenario_name = &args[1];
-    let cfg = scenarios::by_name(scenario_name).unwrap_or_else(|| {
-        eprintln!(
-            "Unknown scenario: {scenario_name}\n\nAvailable scenarios:\n  - {}",
-            scenarios::available_names().join("\n  - ")
-        );
+    let scn = match scenarios::by_name(scenario_name) {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            eprintln!(
+                "Unknown scenario: {scenario_name}\n\nAvailable scenarios:\n  - {}",
+                scenarios::available_names().join("\n  - ")
+            );
+            std::process::exit(2);
+        }
+        Err(e) => {
+            eprintln!("Failed to load scenario {scenario_name}: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    if let Err(e) = scn.validate() {
+        eprintln!("Invalid scenario {scenario_name}: {e}");
         std::process::exit(2);
-    });
+    }
 
-    println!("Scenario: {}", cfg.name);
-    println!("  pieces: {:?}", cfg.layout.kinds());
-    println!("  bound: {}", cfg.bound);
-    println!("  move_bound: {}", cfg.move_bound);
-    println!("  white_can_pass: {}", cfg.white_can_pass);
-    println!("  remove_stalemates: {}", cfg.remove_stalemates);
+    println!("Scenario: {}", scn.name);
+    println!("  pieces: {:?}", scn.rules.layout.kinds());
+    println!("  move_bound: {}", scn.rules.move_bound);
+    println!("  white_can_pass: {}", scn.white_can_pass);
+    println!("  remove_stalemates: {}", scn.remove_stalemates);
+    println!("  candidates: {:?}", scn.candidates);
+    println!("  track_abs_king: {}", scn.track_abs_king);
+    println!("  cache_mode: {:?}", scn.cache_mode);
+    println!("  limits:");
+    println!("    max_states: {}", scn.limits.max_states);
+    println!("    max_edges: {}", scn.limits.max_edges);
+    println!("    max_cache_entries: {}", scn.limits.max_cache_entries);
+    println!("    max_cached_moves: {}", scn.limits.max_cached_moves);
+    println!("    max_runtime_steps: {}", scn.limits.max_runtime_steps);
 
-    let trap = maximal_inescapable_trap(&cfg);
+    let trap = match maximal_inescapable_trap(&scn) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Trap search failed: {e}");
+            std::process::exit(1);
+        }
+    };
     println!("inescapable trap size: {}", trap.len());
 
-    let tempo = maximal_tempo_trap(&cfg, &trap);
+    let tempo = match maximal_tempo_trap(&scn, &trap) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Tempo trap search failed: {e}");
+            std::process::exit(1);
+        }
+    };
     println!("tempo trap size: {}", tempo.len());
 }

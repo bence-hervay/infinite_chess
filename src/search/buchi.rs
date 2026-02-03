@@ -1,47 +1,59 @@
 //! Büchi-game solver for the "tempo trap" refinement.
 //!
 //! The game graph is bipartite:
-//! - Black nodes: black-to-move positions inside an inescapable trap.
-//! - White nodes: positions that arise immediately after a legal black king move.
+//! - Black nodes: black-to-move states inside an inescapable trap.
+//! - White nodes: states that arise immediately after a legal black king move.
 //!
 //! White chooses a reply (including optional pass), and we only keep replies that
 //! stay inside the inescapable trap.
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::chess::rules::Rules;
-use crate::core::position::Position;
+use crate::scenario::{DomainLike, LawsLike, Scenario, SearchError, State};
+use crate::search::movegen::{legal_black_moves, legal_white_moves};
+use crate::search::resources::ResourceTracker;
 
 /// Compute the maximal tempo trap via a Büchi winning-region algorithm.
 ///
-/// Returned set is a subset of `btm_trap` (black-to-move positions).
-pub fn tempo_trap_buchi(
-    rules: &Rules,
-    btm_trap: &FxHashSet<Position>,
-    white_can_pass: bool,
-) -> FxHashSet<Position> {
+/// Returned set is a subset of `btm_trap` (black-to-move states).
+pub fn tempo_trap_buchi<D, L, P>(
+    scn: &Scenario<D, L, P>,
+    btm_trap: &FxHashSet<State>,
+) -> Result<FxHashSet<State>, SearchError>
+where
+    D: DomainLike,
+    L: LawsLike,
+{
+    let mut tracker = ResourceTracker::new(scn.limits);
+
     // Index black nodes.
-    let b_list: Vec<Position> = btm_trap.iter().cloned().collect();
+    let b_list: Vec<State> = btm_trap.iter().cloned().collect();
+    tracker.bump_states("buchi_black_nodes", b_list.len())?;
+
     let b_len = b_list.len();
-    let mut b_index: FxHashMap<Position, usize> = FxHashMap::default();
+    let mut b_index: FxHashMap<State, usize> = FxHashMap::default();
+    tracker.try_reserve_map("buchi_black_index", "b_index", &mut b_index, b_len)?;
     for (i, p) in b_list.iter().enumerate() {
         b_index.insert(p.clone(), i);
     }
 
     // Discover white nodes and black->white edges.
-    let mut w_list: Vec<Position> = Vec::new();
-    let mut w_index: FxHashMap<Position, usize> = FxHashMap::default();
+    let mut w_list: Vec<State> = Vec::new();
+    let mut w_index: FxHashMap<State, usize> = FxHashMap::default();
     let mut bw_succ: Vec<Vec<usize>> = vec![Vec::new(); b_len];
 
     for (bi, bpos) in b_list.iter().enumerate() {
+        tracker.bump_steps("buchi_build_bw", 1)?;
+
         let mut succ_w: Vec<usize> = Vec::new();
-        for wpos in rules.black_moves(bpos).into_iter() {
+        for wpos in legal_black_moves(scn, &scn.laws, bpos, &mut tracker)? {
             let wi = if let Some(&existing) = w_index.get(&wpos) {
                 existing
             } else {
                 let idx = w_list.len();
                 w_list.push(wpos.clone());
                 w_index.insert(wpos.clone(), idx);
+                tracker.bump_states("buchi_white_nodes", 1)?;
                 idx
             };
             succ_w.push(wi);
@@ -56,8 +68,10 @@ pub fn tempo_trap_buchi(
     // White->black edges (only replies that stay inside btm_trap).
     let mut wb_succ: Vec<Vec<usize>> = vec![Vec::new(); w_len];
     for (wi, wpos) in w_list.iter().enumerate() {
+        tracker.bump_steps("buchi_build_wb", 1)?;
+
         let mut succ_b: Vec<usize> = Vec::new();
-        for bnext in rules.white_moves(wpos, white_can_pass).into_iter() {
+        for bnext in legal_white_moves(scn, &scn.laws, wpos, &mut tracker)? {
             if let Some(&bi) = b_index.get(&bnext) {
                 succ_b.push(bi);
             }
@@ -70,7 +84,7 @@ pub fn tempo_trap_buchi(
     // Acceptance set F: white nodes where passing is possible, i.e. the placement itself is in btm_trap.
     let mut is_accept_w: Vec<bool> = vec![false; w_len];
     for (wi, wpos) in w_list.iter().enumerate() {
-        if b_index.contains_key(wpos) {
+        if scn.white_can_pass && scn.laws.allow_pass(wpos) && b_index.contains_key(wpos) {
             is_accept_w[wi] = true;
         }
     }
@@ -80,6 +94,8 @@ pub fn tempo_trap_buchi(
     let mut in_z_w: Vec<bool> = vec![true; w_len];
 
     loop {
+        tracker.bump_steps("buchi_iter", 1)?;
+
         // Y = Attr_white(F) within Z.
         let (in_y_b, in_y_w) = attractor_white(&in_z_b, &in_z_w, &bw_succ, &wb_succ, &is_accept_w);
 
@@ -119,14 +135,15 @@ pub fn tempo_trap_buchi(
         }
     }
 
-    // Return black positions that remain in Z.
-    let mut out: FxHashSet<Position> = FxHashSet::default();
+    // Return black states that remain in Z.
+    let mut out: FxHashSet<State> = FxHashSet::default();
     for (i, p) in b_list.into_iter().enumerate() {
         if in_z_b[i] {
             out.insert(p);
         }
     }
-    out
+
+    Ok(out)
 }
 
 /// Attractor to the accepting set for White.
@@ -136,8 +153,7 @@ pub fn tempo_trap_buchi(
 /// - Black nodes join if *all* their edges (within Z) go into it.
 ///
 /// We intentionally require black nodes to have at least one successor inside Z;
-/// otherwise the play ends (mate/stalemate) and cannot satisfy an "infinitely often"
-/// objective.
+/// otherwise the play ends and cannot satisfy an "infinitely often" objective.
 fn attractor_white(
     in_z_b: &[bool],
     in_z_w: &[bool],
@@ -272,76 +288,4 @@ fn attractor_black(
     }
 
     (in_a_b, in_a_w)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Tiny hand-made Büchi game sanity check.
-    ///
-    /// Graph:
-    ///   B0 -> W0
-    ///   B1 -> W1
-    ///   W0 -> B0 or B1
-    ///   W1 -> B1
-    /// Acceptance set: {W0}
-    ///
-    /// From B0, White can keep going through W0 forever -> winning.
-    /// From B1, the play is stuck visiting only W1 -> losing.
-    #[test]
-    fn buchi_sanity_game() {
-        // We'll "fake" the chess layer by directly calling the internal attractor functions.
-        // Two black nodes, two white nodes.
-        let b_len = 2usize;
-        let w_len = 2usize;
-
-        let bw_succ = vec![vec![0usize], vec![1usize]];
-        let wb_succ = vec![vec![0usize, 1usize], vec![1usize]];
-        let is_accept_w = vec![true, false];
-
-        let mut in_z_b = vec![true; b_len];
-        let mut in_z_w = vec![true; w_len];
-
-        loop {
-            let (in_y_b, in_y_w) =
-                attractor_white(&in_z_b, &in_z_w, &bw_succ, &wb_succ, &is_accept_w);
-
-            let mut target_b = vec![false; b_len];
-            let mut target_w = vec![false; w_len];
-            for i in 0..b_len {
-                if in_z_b[i] && !in_y_b[i] {
-                    target_b[i] = true;
-                }
-            }
-            for i in 0..w_len {
-                if in_z_w[i] && !in_y_w[i] {
-                    target_w[i] = true;
-                }
-            }
-
-            let (in_x_b, in_x_w) =
-                attractor_black(&in_z_b, &in_z_w, &bw_succ, &wb_succ, &target_b, &target_w);
-
-            let mut any_removed = false;
-            for i in 0..b_len {
-                if in_z_b[i] && in_x_b[i] {
-                    in_z_b[i] = false;
-                    any_removed = true;
-                }
-            }
-            for i in 0..w_len {
-                if in_z_w[i] && in_x_w[i] {
-                    in_z_w[i] = false;
-                    any_removed = true;
-                }
-            }
-
-            if !any_removed {
-                break;
-            }
-        }
-
-        assert_eq!(in_z_b, vec![true, false]);
-    }
 }

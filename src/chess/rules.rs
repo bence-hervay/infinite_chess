@@ -129,7 +129,18 @@ impl Rules {
 
     /// All legal black king moves (after re-centering the king at the origin).
     pub fn black_moves(&self, pos: &Position) -> Vec<Position> {
-        let mut out = Vec::new();
+        self.black_moves_with_delta(pos)
+            .into_iter()
+            .map(|(_, p)| p)
+            .collect()
+    }
+
+    /// All legal black king moves, paired with the king step `delta` taken in the *current*
+    /// king-relative coordinate system.
+    ///
+    /// This is useful for scenarios that track an absolute king anchor.
+    pub fn black_moves_with_delta(&self, pos: &Position) -> Vec<(Coord, Position)> {
+        let mut out: Vec<(Coord, Position)> = Vec::new();
 
         for &delta in &KING_STEPS {
             // The black king cannot capture the white king.
@@ -165,7 +176,7 @@ impl Rules {
                 continue;
             }
 
-            out.push(next);
+            out.push((delta, next));
         }
 
         out
