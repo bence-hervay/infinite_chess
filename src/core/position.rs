@@ -19,7 +19,6 @@ pub struct Position {
 }
 
 impl Position {
-    #[inline]
     pub fn new(count: usize, squares: [Square; MAX_PIECES]) -> Self {
         debug_assert!(count <= MAX_PIECES);
         Self {
@@ -28,38 +27,31 @@ impl Position {
         }
     }
 
-    #[inline]
     pub fn count(&self) -> usize {
         self.count as usize
     }
 
-    #[inline]
     pub fn squares(&self) -> &[Square] {
         &self.squares[..self.count()]
     }
 
-    #[inline]
     pub fn squares_mut(&mut self) -> &mut [Square] {
         let n = self.count as usize;
         &mut self.squares[..n]
     }
 
-    #[inline]
     pub fn get(&self, idx: usize) -> Square {
         self.squares()[idx]
     }
 
-    #[inline]
     pub fn square(&self, idx: usize) -> Square {
         self.get(idx)
     }
 
-    #[inline]
     pub fn set(&mut self, idx: usize, sq: Square) {
         self.squares_mut()[idx] = sq;
     }
 
-    #[inline]
     pub fn set_square(&mut self, idx: usize, sq: Square) {
         self.set(idx, sq);
     }
@@ -70,12 +62,10 @@ impl Position {
         }
     }
 
-    #[inline]
     pub fn is_occupied(&self, sq: Square) -> bool {
         self.squares().iter().any(|&s| !s.is_none() && s == sq)
     }
 
-    #[inline]
     pub fn is_occupied_except(&self, sq: Square, except_idx: usize) -> bool {
         self.squares()
             .iter()

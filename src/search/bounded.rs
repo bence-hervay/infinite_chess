@@ -32,7 +32,7 @@ pub struct BoundedCounts {
 
 /// Compute a bundle of bounded-universe metrics.
 ///
-/// Requires `CandidateGeneration::InAbsBox`.
+/// Requires `CandidateGeneration::InBox`.
 pub fn compute_bounded_counts<D, L, P>(
     scn: &Scenario<D, L, P>,
 ) -> Result<BoundedCounts, SearchError>
@@ -43,13 +43,13 @@ where
     scn.validate()?;
 
     let (bound, allow_captures) = match scn.candidates {
-        CandidateGeneration::InAbsBox {
+        CandidateGeneration::InBox {
             bound,
             allow_captures,
         } => (bound, allow_captures),
         _ => {
             return Err(SearchError::InvalidScenario {
-                reason: "compute_bounded_counts requires candidates=InAbsBox".to_string(),
+                reason: "compute_bounded_counts requires candidates=InBox".to_string(),
             })
         }
     };

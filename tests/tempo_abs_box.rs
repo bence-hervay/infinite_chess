@@ -11,13 +11,13 @@ use infinite_chess::scenarios::BuiltinDomain;
 use infinite_chess::search::trap::{maximal_inescapable_trap, maximal_tempo_trap};
 
 #[derive(Debug, Clone, Copy)]
-struct KeepKingInAbsBox {
+struct KeepKingInBox {
     bound: i32,
 }
 
-impl LawsLike for KeepKingInAbsBox {
+impl LawsLike for KeepKingInBox {
     fn allow_black_move(&self, _from: &State, to: &State, _delta: Coord) -> bool {
-        to.abs_king.in_linf_bound(self.bound)
+        to.abs_king.in_box(self.bound)
     }
 }
 
@@ -45,12 +45,12 @@ fn tempo_is_subset_of_trap() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
-        laws: KeepKingInAbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
+        laws: KeepKingInBox { bound },
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
         cache_mode: CacheMode::None,
@@ -78,12 +78,12 @@ fn pass_disabled_makes_tempo_empty() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
-        laws: KeepKingInAbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
+        laws: KeepKingInBox { bound },
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
         cache_mode: CacheMode::None,
@@ -112,12 +112,12 @@ fn always_accepting_toy_has_tempo_equal_trap() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
-        laws: KeepKingInAbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
+        laws: KeepKingInBox { bound },
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
         cache_mode: CacheMode::None,

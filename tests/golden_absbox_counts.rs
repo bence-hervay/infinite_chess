@@ -89,11 +89,11 @@ fn build_scenario(spec: &ScenarioSpec) -> Scenario<BuiltinDomain, NoLaws, NoPref
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: spec.allow_captures,
         },
-        domain: BuiltinDomain::AbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: ResourceLimits::default(),

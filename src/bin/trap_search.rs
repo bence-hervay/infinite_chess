@@ -45,12 +45,10 @@ fn main() {
         } => println!(
             "  candidates: InLinfBound {{ bound: {bound}, allow_captures: {allow_captures} }}"
         ),
-        CandidateGeneration::InAbsBox {
+        CandidateGeneration::InBox {
             bound,
             allow_captures,
-        } => println!(
-            "  candidates: InAbsBox {{ bound: {bound}, allow_captures: {allow_captures} }}"
-        ),
+        } => println!("  candidates: InBox {{ bound: {bound}, allow_captures: {allow_captures} }}"),
         CandidateGeneration::FromStates { states } => {
             println!("  candidates: FromStates {{ states: {} }}", states.len())
         }

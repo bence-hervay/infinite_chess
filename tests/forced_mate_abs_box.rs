@@ -61,11 +61,11 @@ fn three_rooks_in_small_abs_box_has_some_forced_mates() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
@@ -108,11 +108,11 @@ fn mate_winning_region_is_closed_under_optimal_replies() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
@@ -159,11 +159,11 @@ fn two_rooks_has_no_forced_mate_region_in_small_abs_box() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: ResourceLimits::default(),

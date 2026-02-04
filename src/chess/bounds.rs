@@ -160,5 +160,5 @@ pub fn is_in_bound(sq: Square, bound: i32) -> bool {
     if sq.is_none() {
         return true;
     }
-    sq.coord().in_linf_bound(bound)
+    sq.coord().in_box(bound)
 }

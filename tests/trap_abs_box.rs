@@ -32,11 +32,11 @@ fn abs_box_no_pieces_trap_is_empty() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
@@ -63,11 +63,11 @@ fn abs_box_single_rook_trap_is_empty() {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, captured_start(&layout)),
         },
-        candidates: CandidateGeneration::InAbsBox {
+        candidates: CandidateGeneration::InBox {
             bound,
             allow_captures: true,
         },
-        domain: BuiltinDomain::AbsBox { bound },
+        domain: BuiltinDomain::Box { bound },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: ResourceLimits::default(),
@@ -95,11 +95,11 @@ fn abs_box_no_pieces_trap_stays_empty_when_bound_grows() {
                 to_move: Side::Black,
                 state: State::new(Coord::ORIGIN, captured_start(&layout)),
             },
-            candidates: CandidateGeneration::InAbsBox {
+            candidates: CandidateGeneration::InBox {
                 bound,
                 allow_captures: true,
             },
-            domain: BuiltinDomain::AbsBox { bound },
+            domain: BuiltinDomain::Box { bound },
             laws: NoLaws,
             preferences: NoPreferences,
             limits: ResourceLimits::default(),

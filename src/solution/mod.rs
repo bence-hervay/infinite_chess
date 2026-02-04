@@ -731,7 +731,7 @@ fn intern_state(
 }
 
 fn compute_recommended_bound(trap: &FxHashSet<State>) -> i32 {
-    let mut max_norm = 0i32;
+    let mut max_norm = 0;
     for s in trap.iter() {
         for &sq in s.pos.squares() {
             if sq.is_none() {

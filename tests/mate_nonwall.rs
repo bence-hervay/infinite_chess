@@ -1,6 +1,7 @@
 use infinite_chess::chess::layout::PieceLayout;
+use infinite_chess::chess::piece::KING_STEPS;
 use infinite_chess::chess::rules::Rules;
-use infinite_chess::core::coord::{Coord, KING_STEPS};
+use infinite_chess::core::coord::Coord;
 use infinite_chess::core::position::{Position, MAX_PIECES};
 use infinite_chess::core::square::Square;
 use infinite_chess::scenario::{
@@ -68,7 +69,7 @@ fn mate_logic_does_not_treat_enumeration_bound_as_a_wall() {
             .pos
             .squares()
             .iter()
-            .any(|&sq| !sq.is_none() && !sq.coord().in_linf_bound(bound));
+            .any(|&sq| !sq.is_none() && !sq.coord().in_box(bound));
         assert!(any_outside);
     }
 

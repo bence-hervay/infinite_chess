@@ -7,7 +7,7 @@ use infinite_chess::search::mates::count_checkmates_in_bound;
 use infinite_chess::search::trap::{maximal_inescapable_trap, maximal_tempo_trap};
 
 #[test]
-fn three_rooks_has_48_checkmates_in_linf_bound2() {
+fn three_rooks_has_48_checkmates_in_box2() {
     let layout = PieceLayout::from_counts(false, 0, 3, 0, 0);
     let rules = Rules::new(layout, 1);
     let count = count_checkmates_in_bound(&rules, 2);
@@ -15,7 +15,7 @@ fn three_rooks_has_48_checkmates_in_linf_bound2() {
 }
 
 #[test]
-fn two_rooks_has_no_checkmate_even_in_linf_bound7() {
+fn two_rooks_has_no_checkmate_even_in_box7() {
     let layout = PieceLayout::from_counts(false, 0, 2, 0, 0);
     let rules = Rules::new(layout, 1);
     let count = count_checkmates_in_bound(&rules, 7);

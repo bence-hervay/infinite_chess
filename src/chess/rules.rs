@@ -1,8 +1,10 @@
 use crate::chess::layout::PieceLayout;
 use crate::chess::piece::PieceKind;
-use crate::core::coord::{Coord, KING_STEPS};
+use crate::core::coord::Coord;
 use crate::core::position::{Position, MAX_PIECES};
 use crate::core::square::Square;
+
+use crate::chess::piece::{BISHOP_DIRS, KING_STEPS, KNIGHT_STEPS, QUEEN_DIRS, ROOK_DIRS};
 
 /// Rules for "white pieces vs a lone black king", in king-relative coordinates.
 #[derive(Debug, Clone)]
@@ -67,7 +69,6 @@ impl Rules {
         false
     }
 
-    #[inline]
     fn piece_attacks(&self, kind: PieceKind, from: Coord, target: Coord, pos: &Position) -> bool {
         use PieceKind::*;
         match kind {
@@ -221,7 +222,7 @@ impl Rules {
                     }
                 }
                 PieceKind::Knight => {
-                    for &d in &KNIGHT_DELTAS {
+                    for &d in &KNIGHT_STEPS {
                         let to = from + d;
                         if to == Coord::ORIGIN {
                             continue;
@@ -280,39 +281,6 @@ impl Rules {
         self.black_moves(pos).is_empty()
     }
 }
-
-const ROOK_DIRS: [Coord; 4] = [
-    Coord { x: 1, y: 0 },
-    Coord { x: -1, y: 0 },
-    Coord { x: 0, y: 1 },
-    Coord { x: 0, y: -1 },
-];
-const BISHOP_DIRS: [Coord; 4] = [
-    Coord { x: 1, y: 1 },
-    Coord { x: 1, y: -1 },
-    Coord { x: -1, y: 1 },
-    Coord { x: -1, y: -1 },
-];
-const QUEEN_DIRS: [Coord; 8] = [
-    Coord { x: 1, y: 0 },
-    Coord { x: -1, y: 0 },
-    Coord { x: 0, y: 1 },
-    Coord { x: 0, y: -1 },
-    Coord { x: 1, y: 1 },
-    Coord { x: 1, y: -1 },
-    Coord { x: -1, y: 1 },
-    Coord { x: -1, y: -1 },
-];
-const KNIGHT_DELTAS: [Coord; 8] = [
-    Coord { x: 2, y: 1 },
-    Coord { x: 2, y: -1 },
-    Coord { x: -2, y: 1 },
-    Coord { x: -2, y: -1 },
-    Coord { x: 1, y: 2 },
-    Coord { x: 1, y: -2 },
-    Coord { x: -1, y: 2 },
-    Coord { x: -1, y: -2 },
-];
 
 #[inline]
 fn normalized_dir_and_distance(v: Coord) -> Option<(Coord, i32)> {

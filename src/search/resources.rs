@@ -17,7 +17,6 @@ pub struct ResourceTracker {
 }
 
 impl ResourceTracker {
-    #[inline]
     pub fn new(limits: ResourceLimits) -> Self {
         Self {
             limits,
@@ -25,12 +24,10 @@ impl ResourceTracker {
         }
     }
 
-    #[inline]
     pub fn counts(&self) -> ResourceCounts {
         self.counts
     }
 
-    #[inline]
     pub fn bump_states(&mut self, stage: &'static str, delta: usize) -> Result<(), SearchError> {
         self.bump(
             stage,
@@ -41,7 +38,6 @@ impl ResourceTracker {
         )
     }
 
-    #[inline]
     pub fn bump_edges(&mut self, stage: &'static str, delta: usize) -> Result<(), SearchError> {
         self.bump(
             stage,
@@ -52,7 +48,6 @@ impl ResourceTracker {
         )
     }
 
-    #[inline]
     pub fn bump_cache_entries(
         &mut self,
         stage: &'static str,
@@ -67,12 +62,10 @@ impl ResourceTracker {
         )
     }
 
-    #[inline]
     pub fn dec_cache_entries(&mut self, delta: usize) {
         self.counts.cache_entries = self.counts.cache_entries.saturating_sub(delta as u64);
     }
 
-    #[inline]
     pub fn bump_cached_moves(
         &mut self,
         stage: &'static str,
@@ -87,12 +80,10 @@ impl ResourceTracker {
         )
     }
 
-    #[inline]
     pub fn dec_cached_moves(&mut self, delta: usize) {
         self.counts.cached_moves = self.counts.cached_moves.saturating_sub(delta as u64);
     }
 
-    #[inline]
     pub fn bump_steps(&mut self, stage: &'static str, delta: u64) -> Result<(), SearchError> {
         self.bump(
             stage,

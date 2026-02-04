@@ -32,20 +32,20 @@ use crate::scenario::{
 #[derive(Debug, Clone, Copy)]
 pub enum BuiltinDomain {
     All,
-    AbsBox { bound: i32 },
+    Box { bound: i32 },
 }
 
 impl DomainLike for BuiltinDomain {
     fn inside(&self, s: &State) -> bool {
         match *self {
             BuiltinDomain::All => true,
-            BuiltinDomain::AbsBox { bound } => {
-                if !s.abs_king.in_linf_bound(bound) {
+            BuiltinDomain::Box { bound } => {
+                if !s.abs_king.in_box(bound) {
                     return false;
                 }
                 for (_, sq) in s.pos.iter_present() {
                     let abs = s.abs_king + sq.coord();
-                    if !abs.in_linf_bound(bound) {
+                    if !abs.in_box(bound) {
                         return false;
                     }
                 }
@@ -142,7 +142,7 @@ pub fn two_rooks_bound7() -> BuiltInScenario {
         candidates: CandidateGeneration::ReachableFromStart {
             max_queue: 2_000_000,
         },
-        domain: BuiltinDomain::AbsBox { bound: 7 },
+        domain: BuiltinDomain::Box { bound: 7 },
         laws: NoLaws,
         preferences: NoPreferences,
         limits: two_rooks_limits(),

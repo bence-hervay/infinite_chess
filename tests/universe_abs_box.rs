@@ -24,11 +24,11 @@ fn enumerated_states_respect_abs_box_membership() {
     let bound = 1;
 
     for_each_state_in_abs_box(&layout, bound, true, |s| {
-        assert!(s.abs_king.in_linf_bound(bound));
+        assert!(s.abs_king.in_box(bound));
         for (_, sq) in s.pos.iter_present() {
             assert_ne!(sq.coord(), Coord::ORIGIN);
             let abs = s.abs_king + sq.coord();
-            assert!(abs.in_linf_bound(bound));
+            assert!(abs.in_box(bound));
         }
     });
 }

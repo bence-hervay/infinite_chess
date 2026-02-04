@@ -169,7 +169,7 @@ let rules = Rules::new(layout, 23);
 `scenario::CandidateGeneration` controls which black-to-move states are considered “candidates” for trap search:
 
 - `InLinfBound { bound, allow_captures }`: enumerate all canonical placements within an L∞ bound (cheap and great for small piece counts).
-- `InAbsBox { bound, allow_captures }`: enumerate all canonical placements inside an absolute box `[-B,B]×[-B,B]` while tracking the absolute king anchor (`Scenario.track_abs_king=true`).
+- `InBox { bound, allow_captures }`: enumerate all canonical placements inside an absolute box `[-B,B]×[-B,B]` while tracking the absolute king anchor (`Scenario.track_abs_king=true`).
 - `FromStates { states }`: provide a precomputed list (e.g. from a file or a geometric generator).
 - `ReachableFromStart { max_queue }`: BFS explore reachable states from the required `start` (often far smaller than full enumeration).
 

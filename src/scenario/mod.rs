@@ -40,7 +40,6 @@ pub struct State {
 }
 
 impl State {
-    #[inline]
     pub fn new(abs_king: Coord, pos: Position) -> Self {
         Self { abs_king, pos }
     }
@@ -176,22 +175,18 @@ pub trait DomainLike {
 /// - `allow_black_move` / `allow_white_move` can reject specific transitions
 /// - `allow_pass` controls whether a pass is allowed at a given state (used by tempo trap)
 pub trait LawsLike {
-    #[inline]
     fn allow_state(&self, _s: &State) -> bool {
         true
     }
 
-    #[inline]
     fn allow_black_move(&self, _from: &State, _to: &State, _delta: Coord) -> bool {
         true
     }
 
-    #[inline]
     fn allow_white_move(&self, _from: &State, _to: &State) -> bool {
         true
     }
 
-    #[inline]
     fn allow_pass(&self, _s: &State) -> bool {
         true
     }
@@ -211,7 +206,6 @@ impl LawsLike for NoLaws {}
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AllDomain;
 impl DomainLike for AllDomain {
-    #[inline]
     fn inside(&self, _s: &State) -> bool {
         true
     }
@@ -238,7 +232,7 @@ pub enum CandidateGeneration {
     ///
     /// This is intended for "bounded universe" experiments where the black king anchor is tracked
     /// in absolute coordinates and leaving the box is treated as leaving the modeled universe.
-    InAbsBox { bound: i32, allow_captures: bool },
+    InBox { bound: i32, allow_captures: bool },
     /// Use an explicitly provided list of candidate states (e.g. file-backed or geometry-backed).
     FromStates { states: Vec<State> },
     /// Explore states reachable from the required `start` (often much smaller than enumeration).
@@ -314,20 +308,19 @@ impl<D: DomainLike, L: LawsLike, P> Scenario<D, L, P> {
             }
         }
 
-        if let CandidateGeneration::InAbsBox { bound, .. } = self.candidates {
+        if let CandidateGeneration::InBox { bound, .. } = self.candidates {
             if bound < 0 {
                 return Err(SearchError::InvalidScenario {
-                    reason: "InAbsBox requires bound >= 0".to_string(),
+                    reason: "InBox requires bound >= 0".to_string(),
                 });
             }
             if !self.track_abs_king {
                 return Err(SearchError::InvalidScenario {
-                    reason: "InAbsBox candidate generation requires track_abs_king=true"
-                        .to_string(),
+                    reason: "InBox candidate generation requires track_abs_king=true".to_string(),
                 });
             }
 
-            if !s.abs_king.in_linf_bound(bound) {
+            if !s.abs_king.in_box(bound) {
                 return Err(SearchError::InvalidScenario {
                     reason: format!("start abs_king is outside the AbsBox bound {bound}"),
                 });
@@ -335,7 +328,7 @@ impl<D: DomainLike, L: LawsLike, P> Scenario<D, L, P> {
 
             for (_, sq) in s.pos.iter_present() {
                 let abs = s.abs_king + sq.coord();
-                if !abs.in_linf_bound(bound) {
+                if !abs.in_box(bound) {
                     return Err(SearchError::InvalidScenario {
                         reason: format!(
                             "start has a piece outside the AbsBox bound {bound} (abs={abs:?})"

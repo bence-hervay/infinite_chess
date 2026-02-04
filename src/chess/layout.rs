@@ -44,27 +44,22 @@ impl PieceLayout {
         }
     }
 
-    #[inline]
     pub fn piece_count(&self) -> usize {
         self.kinds.len()
     }
 
-    #[inline]
     pub fn kind(&self, index: usize) -> PieceKind {
         self.kinds[index]
     }
 
-    #[inline]
     pub fn kinds(&self) -> &[PieceKind] {
         &self.kinds
     }
 
-    #[inline]
     pub fn identical_runs(&self) -> &[Range<usize>] {
         &self.identical_runs
     }
 
-    #[inline]
     pub fn white_king_index(&self) -> Option<usize> {
         self.white_king_index
     }

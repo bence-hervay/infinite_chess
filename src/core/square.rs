@@ -13,7 +13,6 @@ pub struct Square(i64);
 impl Square {
     pub const NONE: Square = Square(i64::MIN);
 
-    #[inline]
     pub fn is_none(self) -> bool {
         self.0 == Self::NONE.0
     }
@@ -22,7 +21,6 @@ impl Square {
     ///
     /// This is intended for compact serialization formats. `Square::NONE` is represented as
     /// `i64::MIN`.
-    #[inline]
     pub fn raw(self) -> i64 {
         self.0
     }
@@ -30,18 +28,15 @@ impl Square {
     /// Construct from a raw packed square representation.
     ///
     /// This is intended for compact serialization formats. `i64::MIN` represents `Square::NONE`.
-    #[inline]
     pub fn from_raw(raw: i64) -> Square {
         Square(raw)
     }
 
-    #[inline]
     pub fn from_coord(c: Coord) -> Square {
         // High 32 bits = x, low 32 bits = y.
         Square(((c.x as i64) << 32) | (c.y as u32 as i64))
     }
 
-    #[inline]
     pub fn coord(self) -> Coord {
         debug_assert!(!self.is_none());
         let x = (self.0 >> 32) as i32;
@@ -49,7 +44,6 @@ impl Square {
         Coord { x, y }
     }
 
-    #[inline]
     pub fn shifted(self, delta: Coord) -> Square {
         if self.is_none() {
             self
@@ -62,7 +56,6 @@ impl Square {
         }
     }
 
-    #[inline]
     pub fn shifted_neg(self, delta: Coord) -> Square {
         self.shifted(Coord {
             x: -delta.x,

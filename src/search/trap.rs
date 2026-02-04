@@ -291,14 +291,13 @@ where
             }
         }
 
-        CandidateGeneration::InAbsBox {
+        CandidateGeneration::InBox {
             bound,
             allow_captures,
         } => {
             if !scn.track_abs_king {
                 return Err(SearchError::InvalidScenario {
-                    reason: "InAbsBox candidate generation requires track_abs_king=true"
-                        .to_string(),
+                    reason: "InBox candidate generation requires track_abs_king=true".to_string(),
                 });
             }
 

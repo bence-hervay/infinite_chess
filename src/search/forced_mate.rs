@@ -4,7 +4,7 @@
 //! White wins if it can force reaching a black-to-move checkmate node in finite time.
 //!
 //! Semantics:
-//! - The universe is the scenario's candidate set (typically `CandidateGeneration::InAbsBox`).
+//! - The universe is the scenario's candidate set (typically `CandidateGeneration::InBox`).
 //! - Any legal black move that leaves the universe is treated as an escape, so the origin state
 //!   cannot be proven winning.
 //! - White moves that leave the universe are treated as illegal (ignored).
@@ -29,7 +29,7 @@ pub struct ForcedMateResult {
 
 /// Compute the winning region for a forced mate inside a bounded universe.
 ///
-/// This routine currently requires `CandidateGeneration::InAbsBox` so that "leaving the universe"
+/// This routine currently requires `CandidateGeneration::InBox` so that "leaving the universe"
 /// (e.g. walking beyond the absolute bound) is observable.
 pub fn forced_mate_bounded<D, L, P>(
     scn: &Scenario<D, L, P>,
@@ -42,13 +42,13 @@ where
     scn.validate()?;
 
     let (bound, allow_captures) = match scn.candidates {
-        CandidateGeneration::InAbsBox {
+        CandidateGeneration::InBox {
             bound,
             allow_captures,
         } => (bound, allow_captures),
         _ => {
             return Err(SearchError::InvalidScenario {
-                reason: "forced_mate_bounded currently requires candidates=InAbsBox".to_string(),
+                reason: "forced_mate_bounded currently requires candidates=InBox".to_string(),
             })
         }
     };
