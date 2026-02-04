@@ -18,6 +18,23 @@ impl Square {
         self.0 == Self::NONE.0
     }
 
+    /// Raw packed representation of this square.
+    ///
+    /// This is intended for compact serialization formats. `Square::NONE` is represented as
+    /// `i64::MIN`.
+    #[inline]
+    pub fn raw(self) -> i64 {
+        self.0
+    }
+
+    /// Construct from a raw packed square representation.
+    ///
+    /// This is intended for compact serialization formats. `i64::MIN` represents `Square::NONE`.
+    #[inline]
+    pub fn from_raw(raw: i64) -> Square {
+        Square(raw)
+    }
+
     #[inline]
     pub fn from_coord(c: Coord) -> Square {
         // High 32 bits = x, low 32 bits = y.

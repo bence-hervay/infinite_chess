@@ -67,6 +67,29 @@ Built-in scenarios are listed by:
 cargo run --release --bin trap_search
 ```
 
+## Export + play a solved bundle (interactive)
+
+You can export a solved scenario (trap + optional tempo strategy) into a portable bundle and then
+play as **Black** against the saved White strategy.
+
+Export:
+
+```bash
+cargo run --release --bin export_solution -- three_rooks_bound2_mb1 out/three_rooks.sol
+```
+
+Play:
+
+```bash
+cargo run --release --bin play_solution -- out/three_rooks.sol --view relative
+```
+
+Notes:
+- The bundle contains a JSON `manifest.json` plus a dense `data.bin` with state tables,
+  transitions, and strategies.
+- The interactive player uses precomputed transitions/strategies, so it does not need the original
+  scenario code to be unchanged.
+
 ## Extending scenarios (how-to)
 
 You usually extend the project by adding a new scenario function in `src/scenarios/` and wiring it into `src/scenarios/mod.rs:by_name`.

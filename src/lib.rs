@@ -17,6 +17,7 @@
 //!   - **Resource limits** ([`scenario::ResourceLimits`]) bound state explosion and allow graceful failure.
 //! - [`search`]: objective solvers (trap / tempo trap / mate enumeration).
 //! - [`scenarios`]: built-in scenarios (small demos + one data-backed reference scenario).
+//! - [`solution`]: exporting/loading solved bundles (strategies + transitions) for interactive play.
 //!
 //! ## Quick start (no heavy computation)
 //!
@@ -37,3 +38,4 @@ pub mod core;
 pub mod scenario;
 pub mod scenarios;
 pub mod search;
+pub mod solution;
