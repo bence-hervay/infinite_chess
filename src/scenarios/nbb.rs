@@ -15,11 +15,13 @@ use crate::core::coord::Coord;
 use crate::core::position::{Position, MAX_PIECES};
 use crate::core::square::Square;
 use crate::scenario::{
-    AllDomain, CacheMode, CandidateGeneration, NoLaws, NoPreferences, ResourceLimits, Scenario,
-    SearchError, Side, StartState, State,
+    CacheMode, CandidateGeneration, NoLaws, NoPreferences, ResourceLimits, Scenario, SearchError,
+    Side, StartState, State,
 };
 
-pub fn nbb20_from_file() -> Result<Scenario<AllDomain, NoLaws, NoPreferences>, SearchError> {
+use super::BuiltinDomain;
+
+pub fn nbb20_from_file() -> Result<Scenario<BuiltinDomain, NoLaws, NoPreferences>, SearchError> {
     let path = default_trap_file_path();
 
     let layout = PieceLayout::from_counts(false, 0, 0, 2, 1); // B B N
@@ -54,7 +56,7 @@ pub fn nbb20_from_file() -> Result<Scenario<AllDomain, NoLaws, NoPreferences>, S
             state: start,
         },
         candidates: CandidateGeneration::FromStates { states },
-        domain: AllDomain,
+        domain: BuiltinDomain::All,
         laws: NoLaws,
         preferences: NoPreferences,
         limits: nbb_limits(),

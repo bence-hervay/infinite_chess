@@ -18,11 +18,44 @@ use crate::core::coord::Coord;
 use crate::core::position::{Position, MAX_PIECES};
 use crate::core::square::Square;
 use crate::scenario::{
-    AllDomain, CacheMode, CandidateGeneration, NoLaws, NoPreferences, ResourceLimits, Scenario,
+    CacheMode, CandidateGeneration, DomainLike, NoLaws, NoPreferences, ResourceLimits, Scenario,
     SearchError, Side, StartState, State,
 };
 
-pub type BuiltInScenario = Scenario<AllDomain, NoLaws, NoPreferences>;
+/// Built-in domains used by the built-in scenarios.
+///
+/// This is intentionally small and concrete (no "framework"):
+/// - [`BuiltinDomain::All`] keeps the legacy behavior (purely translation-reduced search).
+/// - [`BuiltinDomain::AbsBox`] anchors the state space by tracking an absolute king coordinate and
+///   bounding both king and pieces to a finite box. This makes "walking off to infinity" observable
+///   as leaving the domain.
+#[derive(Debug, Clone, Copy)]
+pub enum BuiltinDomain {
+    All,
+    AbsBox { bound: i32 },
+}
+
+impl DomainLike for BuiltinDomain {
+    fn inside(&self, s: &State) -> bool {
+        match *self {
+            BuiltinDomain::All => true,
+            BuiltinDomain::AbsBox { bound } => {
+                if !s.abs_king.in_linf_bound(bound) {
+                    return false;
+                }
+                for (_, sq) in s.pos.iter_present() {
+                    let abs = s.abs_king + sq.coord();
+                    if !abs.in_linf_bound(bound) {
+                        return false;
+                    }
+                }
+                true
+            }
+        }
+    }
+}
+
+pub type BuiltInScenario = Scenario<BuiltinDomain, NoLaws, NoPreferences>;
 
 fn pos_from_coords(layout: &PieceLayout, coords: &[Coord]) -> Position {
     assert_eq!(layout.piece_count(), coords.len());
@@ -45,6 +78,16 @@ fn demo_limits() -> ResourceLimits {
     }
 }
 
+fn two_rooks_limits() -> ResourceLimits {
+    ResourceLimits {
+        max_states: 2_000_000,
+        max_edges: 2_000_000_000,
+        max_cache_entries: 250_000,
+        max_cached_moves: 15_000_000,
+        max_runtime_steps: 2_000_000_000,
+    }
+}
+
 /// 3 rooks, bound=2, move_bound=1.
 ///
 /// This is small enough to be used in tests and fast demos.
@@ -53,7 +96,7 @@ pub fn three_rooks_bound2_mb1() -> BuiltInScenario {
     let rules = Rules::new(layout.clone(), 1);
     let start_pos = pos_from_coords(
         &layout,
-        &[Coord::new(2, 2), Coord::new(-2, 2), Coord::new(2, -2)],
+        &[Coord::new(2, 2), Coord::new(2, 1), Coord::new(1, 2)],
     );
 
     Scenario {
@@ -69,7 +112,7 @@ pub fn three_rooks_bound2_mb1() -> BuiltInScenario {
             bound: 2,
             allow_captures: true,
         },
-        domain: AllDomain,
+        domain: BuiltinDomain::All,
         laws: NoLaws,
         preferences: NoPreferences,
         limits: demo_limits(),
@@ -78,7 +121,10 @@ pub fn three_rooks_bound2_mb1() -> BuiltInScenario {
     }
 }
 
-/// 2 rooks, bound=7 (used for the "no checkmates" known result).
+/// 2 rooks, `move_bound=7`, with an absolute "board window" domain.
+///
+/// This scenario is anchored (`track_abs_king=true`) so "walk away forever" becomes observable as
+/// leaving the domain.
 pub fn two_rooks_bound7() -> BuiltInScenario {
     let layout = PieceLayout::from_counts(false, 0, 2, 0, 0);
     let rules = Rules::new(layout.clone(), 7);
@@ -88,19 +134,18 @@ pub fn two_rooks_bound7() -> BuiltInScenario {
         name: "two_rooks_bound7",
         rules,
         white_can_pass: true,
-        track_abs_king: false,
+        track_abs_king: true,
         start: StartState {
             to_move: Side::Black,
             state: State::new(Coord::ORIGIN, start_pos),
         },
-        candidates: CandidateGeneration::InLinfBound {
-            bound: 7,
-            allow_captures: true,
+        candidates: CandidateGeneration::ReachableFromStart {
+            max_queue: 2_000_000,
         },
-        domain: AllDomain,
+        domain: BuiltinDomain::AbsBox { bound: 7 },
         laws: NoLaws,
         preferences: NoPreferences,
-        limits: demo_limits(),
+        limits: two_rooks_limits(),
         cache_mode: CacheMode::BothBounded,
         remove_stalemates: true,
     }
