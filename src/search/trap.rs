@@ -20,6 +20,7 @@ use crate::scenario::{
 };
 use crate::search::movegen::{is_stalemate_with_laws, legal_black_moves, legal_white_moves};
 use crate::search::resources::ResourceTracker;
+use crate::search::universe::try_for_each_state_in_abs_box;
 
 /// Cache for move generation during trap pruning.
 #[derive(Default)]
@@ -288,6 +289,38 @@ where
                     tracker.bump_states("candidates_in_bound", 1)?;
                 }
             }
+        }
+
+        CandidateGeneration::InAbsBox {
+            bound,
+            allow_captures,
+        } => {
+            if !scn.track_abs_king {
+                return Err(SearchError::InvalidScenario {
+                    reason: "InAbsBox candidate generation requires track_abs_king=true"
+                        .to_string(),
+                });
+            }
+
+            try_for_each_state_in_abs_box(&scn.rules.layout, *bound, *allow_captures, |s| {
+                if !scn.rules.is_legal_position(&s.pos) {
+                    return Ok(());
+                }
+                if !scn.laws.allow_state(&s) {
+                    return Ok(());
+                }
+                if !scn.domain.inside(&s) {
+                    return Ok(());
+                }
+                if scn.remove_stalemates && is_stalemate_with_laws(scn, &scn.laws, &s, tracker)? {
+                    return Ok(());
+                }
+
+                if trap.insert(s) {
+                    tracker.bump_states("candidates_in_abs_box", 1)?;
+                }
+                Ok(())
+            })?;
         }
 
         CandidateGeneration::FromStates { states } => {

@@ -1,4 +1,4 @@
-//! Game-search utilities (trap, tempo trap, mate enumeration).
+//! Game-search utilities (trap, tempo trap, bounded evaluation, forced mate).
 //!
 //! The search layer is intentionally parameterized by [`crate::scenario::Scenario`]:
 //! - Pure move generation lives in [`crate::chess::rules::Rules`].
@@ -6,9 +6,12 @@
 //! - Domain membership (`inside`) is interpreted by objectives like [`trap`].
 //! - All heavy routines use [`resources::ResourceTracker`] and return `Result<_, crate::scenario::SearchError>`.
 
+pub mod bounded;
 pub mod buchi;
+pub mod forced_mate;
 pub mod mates;
 pub mod movegen;
 pub mod resources;
 pub mod strategy;
 pub mod trap;
+pub mod universe;

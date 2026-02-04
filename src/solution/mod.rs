@@ -592,9 +592,9 @@ fn read_data(bundle_dir: &Path, piece_count: usize) -> Result<SolutionData, Sear
         let y = read_i32(&mut r, "solution_load_data_read", &path)?;
 
         let mut squares = [Square::NONE; MAX_PIECES];
-        for i in 0..piece_count {
+        for square in squares.iter_mut().take(piece_count) {
             let raw = read_i64(&mut r, "solution_load_data_read", &path)?;
-            squares[i] = Square::from_raw(raw);
+            *square = Square::from_raw(raw);
         }
 
         let pos = Position::new(piece_count, squares);

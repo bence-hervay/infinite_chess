@@ -1,0 +1,12 @@
+{
+  "scenario": {
+    "bound": 3,
+    "move_bound": 6,
+    "move_bound_mode": "inclusive",
+    "pieces": { "white_king": false, "queens": 0, "rooks": 2, "bishops": 0, "knights": 0 },
+    "allow_captures": true,
+    "white_can_pass": true,
+    "remove_stalemates": true
+  }
+}
+

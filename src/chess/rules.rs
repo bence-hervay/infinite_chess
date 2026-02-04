@@ -34,10 +34,8 @@ impl Rules {
             if sq.coord() == Coord::ORIGIN {
                 return false;
             }
-            for j in 0..seen_len {
-                if seen[j] == sq {
-                    return false;
-                }
+            if seen.iter().take(seen_len).any(|&s| s == sq) {
+                return false;
             }
             seen[seen_len] = sq;
             seen_len += 1;
@@ -45,10 +43,8 @@ impl Rules {
 
         if let Some(k_idx) = self.layout.white_king_index() {
             let ks = pos.square(k_idx);
-            if !ks.is_none() {
-                if ks.coord().chebyshev_norm() <= 1 {
-                    return false;
-                }
+            if !ks.is_none() && ks.coord().chebyshev_norm() <= 1 {
+                return false;
             }
         }
 
@@ -104,7 +100,7 @@ impl Rules {
             Some(x) => x,
         };
 
-        if !dirs.iter().any(|&d| d == dir) {
+        if !dirs.contains(&dir) {
             return false;
         }
 

@@ -1,0 +1,23 @@
+{
+  "scenario": {
+    "bound": 1,
+    "move_bound": 1,
+    "move_bound_mode": "inclusive",
+    "pieces": { "white_king": false, "queens": 0, "rooks": 3, "bishops": 0, "knights": 0 },
+    "allow_captures": true,
+    "white_can_pass": false,
+    "remove_stalemates": true
+  },
+  "expected": {
+    "universe_states": 837,
+    "black_moves_in": 864,
+    "black_moves_escape": 1292,
+    "white_moves_in": 3696,
+    "white_moves_escape": 2784,
+    "checkmates": 28,
+    "trap": 36,
+    "tempo": 0,
+    "mate": 36
+  }
+}
+

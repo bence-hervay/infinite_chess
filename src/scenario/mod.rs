@@ -234,6 +234,11 @@ impl PreferencesLike for NoPreferences {
 pub enum CandidateGeneration {
     /// Enumerate all canonical placements within an L∞ bound (relative coordinates).
     InLinfBound { bound: i32, allow_captures: bool },
+    /// Enumerate all canonical placements within an absolute bounding box (absolute coordinates).
+    ///
+    /// This is intended for "bounded universe" experiments where the black king anchor is tracked
+    /// in absolute coordinates and leaving the box is treated as leaving the modeled universe.
+    InAbsBox { bound: i32, allow_captures: bool },
     /// Use an explicitly provided list of candidate states (e.g. file-backed or geometry-backed).
     FromStates { states: Vec<State> },
     /// Explore states reachable from the required `start` (often much smaller than enumeration).
@@ -304,6 +309,37 @@ impl<D: DomainLike, L: LawsLike, P> Scenario<D, L, P> {
                 if !is_in_bound(sq, bound) {
                     return Err(SearchError::InvalidScenario {
                         reason: format!("start has a piece outside the L∞ bound {bound}"),
+                    });
+                }
+            }
+        }
+
+        if let CandidateGeneration::InAbsBox { bound, .. } = self.candidates {
+            if bound < 0 {
+                return Err(SearchError::InvalidScenario {
+                    reason: "InAbsBox requires bound >= 0".to_string(),
+                });
+            }
+            if !self.track_abs_king {
+                return Err(SearchError::InvalidScenario {
+                    reason: "InAbsBox candidate generation requires track_abs_king=true"
+                        .to_string(),
+                });
+            }
+
+            if !s.abs_king.in_linf_bound(bound) {
+                return Err(SearchError::InvalidScenario {
+                    reason: format!("start abs_king is outside the AbsBox bound {bound}"),
+                });
+            }
+
+            for (_, sq) in s.pos.iter_present() {
+                let abs = s.abs_king + sq.coord();
+                if !abs.in_linf_bound(bound) {
+                    return Err(SearchError::InvalidScenario {
+                        reason: format!(
+                            "start has a piece outside the AbsBox bound {bound} (abs={abs:?})"
+                        ),
                     });
                 }
             }

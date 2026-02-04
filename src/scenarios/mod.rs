@@ -155,12 +155,17 @@ pub fn nbb20_from_file() -> Result<BuiltInScenario, SearchError> {
     nbb::nbb20_from_file()
 }
 
+pub fn nbb7_generated() -> Result<BuiltInScenario, SearchError> {
+    nbb::nbb7_generated()
+}
+
 /// Return a config by name.
 pub fn by_name(name: &str) -> Result<Option<BuiltInScenario>, SearchError> {
     match name {
         "three_rooks_bound2_mb1" => Ok(Some(three_rooks_bound2_mb1())),
         "two_rooks_bound7" => Ok(Some(two_rooks_bound7())),
         "nbb20_from_file" => Ok(Some(nbb20_from_file()?)),
+        "nbb7_generated" => Ok(Some(nbb7_generated()?)),
         _ => Ok(None),
     }
 }
@@ -171,6 +176,7 @@ pub fn names() -> &'static [&'static str] {
         "three_rooks_bound2_mb1",
         "two_rooks_bound7",
         "nbb20_from_file",
+        "nbb7_generated",
     ]
 }
 

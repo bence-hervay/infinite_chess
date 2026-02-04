@@ -30,10 +30,10 @@ impl PieceLayout {
             white_king_index = Some(0);
             kinds.push(PieceKind::King);
         }
-        kinds.extend(std::iter::repeat(PieceKind::Queen).take(queens));
-        kinds.extend(std::iter::repeat(PieceKind::Rook).take(rooks));
-        kinds.extend(std::iter::repeat(PieceKind::Bishop).take(bishops));
-        kinds.extend(std::iter::repeat(PieceKind::Knight).take(knights));
+        kinds.extend(std::iter::repeat_n(PieceKind::Queen, queens));
+        kinds.extend(std::iter::repeat_n(PieceKind::Rook, rooks));
+        kinds.extend(std::iter::repeat_n(PieceKind::Bishop, bishops));
+        kinds.extend(std::iter::repeat_n(PieceKind::Knight, knights));
 
         let identical_runs = compute_runs(&kinds);
 

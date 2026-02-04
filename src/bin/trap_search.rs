@@ -1,3 +1,4 @@
+use infinite_chess::scenario::CandidateGeneration;
 use infinite_chess::scenarios;
 use infinite_chess::search::trap::{maximal_inescapable_trap, maximal_tempo_trap};
 
@@ -37,7 +38,26 @@ fn main() {
     println!("  move_bound: {}", scn.rules.move_bound);
     println!("  white_can_pass: {}", scn.white_can_pass);
     println!("  remove_stalemates: {}", scn.remove_stalemates);
-    println!("  candidates: {:?}", scn.candidates);
+    match &scn.candidates {
+        CandidateGeneration::InLinfBound {
+            bound,
+            allow_captures,
+        } => println!(
+            "  candidates: InLinfBound {{ bound: {bound}, allow_captures: {allow_captures} }}"
+        ),
+        CandidateGeneration::InAbsBox {
+            bound,
+            allow_captures,
+        } => println!(
+            "  candidates: InAbsBox {{ bound: {bound}, allow_captures: {allow_captures} }}"
+        ),
+        CandidateGeneration::FromStates { states } => {
+            println!("  candidates: FromStates {{ states: {} }}", states.len())
+        }
+        CandidateGeneration::ReachableFromStart { max_queue } => {
+            println!("  candidates: ReachableFromStart {{ max_queue: {max_queue} }}")
+        }
+    }
     println!("  track_abs_king: {}", scn.track_abs_king);
     println!("  cache_mode: {:?}", scn.cache_mode);
     println!("  limits:");

@@ -1,6 +1,7 @@
 # Infinite Chess
 
-The project models “white pieces vs a lone black king” on an infinite board and supports multiple objectives under a configurable scenario layer.
+This project models **white pieces vs a lone black king** on an infinite board and supports
+multiple objectives under a configurable scenario layer.
 
 ## Concepts: Rules vs Scenario
 
@@ -9,7 +10,7 @@ This codebase intentionally separates concerns:
 - **Rules** (`src/chess/`): pure chess movement + legality on the infinite board (attacks, captures, king safety, slider `move_bound`).
 - **Scenario** (`src/scenario/`): adds *scenario-specific* constraints and search configuration via:
   - **Laws**: filters on what moves/states are allowed (scenario legality restrictions).
-  - **Domain**: membership predicate for what counts as “inside the modeled set” for trap objectives (leaving is allowed; it just counts as escape if the opponent can force it).
+  - **Domain**: membership predicate for what counts as “inside the modeled set” (objectives interpret leaving as escape/win depending on the solver).
   - **Preferences**: non-adversarial move ordering used only for demos/strategy extraction (never affects correctness of trap sets).
   - **Resource limits**: explicit budgets so large searches fail with a structured error instead of OOM.
 
@@ -23,6 +24,16 @@ This codebase intentionally separates concerns:
    - `maximal_inescapable_trap`: greatest fixed point of black-to-move states inside the scenario’s **domain** where White can always reply to stay in the current set.
    - `maximal_tempo_trap`: Büchi refinement where White can force infinitely many visits to “passable” white-to-move states (controlled by `white_can_pass` + `laws.allow_pass`).
 
+3. **Forced mate in a bounded universe** (`search::forced_mate`).
+   - Retrograde reachability on a finite, explicitly enumerated universe (AbsBox).
+   - Optional distance-to-mate (DTM) in plies.
+   - Passing is only enabled if the scenario explicitly allows it.
+   - Use `search::forced_mate::forced_mate_bounded(&scn, true)` to compute DTM.
+
+4. **Bounded-universe metrics + parity harness** (`search::bounded` + `bounded_eval` binary).
+   - Enumerates the AbsBox universe and reports counts (states, in-universe vs escaping moves, mates, trap/tempo/mate region sizes).
+   - Used by the golden regression tests under `tests/golden/scenarios/`.
+
 ## Repository layout
 
 ```
@@ -30,11 +41,12 @@ src/
   core/      # packed squares, coordinates, fixed-size positions
   chess/     # traditional-piece rules, attack + move generation, L∞ enumeration
   scenario/  # State/Scenario + Laws/Domain/Preferences + limits/errors
-  search/    # trap solver + Büchi solver + movegen + resource tracking + mate enumeration
+  search/    # trap + Büchi + bounded-universe enumeration + forced mate + helpers
   scenarios/ # built-in scenarios (Rust code + optional data-backed scenarios)
   bin/       # small CLIs
 
 tests/       # higher-order property tests
+tools/       # cross-check scripts (optional)
 ```
 
 ## State model
@@ -43,6 +55,8 @@ tests/       # higher-order property tests
 - `scenario::State` adds `abs_king: Coord` as an optional absolute anchor.
   - If `Scenario.track_abs_king == false`, the absolute coordinate is ignored and must stay at `ORIGIN` (translation-reduced state space).
   - If `Scenario.track_abs_king == true`, black king moves update `abs_king` by the moved `delta`, enabling “absolute” laws/domains (e.g. clamp to a half-plane).
+
+For bounded-universe parity runs (AbsBox), the canonical semantics are documented in `MODEL_SPEC.md`.
 
 ## Running
 
@@ -65,6 +79,50 @@ Built-in scenarios are listed by:
 
 ```bash
 cargo run --release --bin trap_search
+```
+
+## Bounded AbsBox evaluation (JSON scenarios)
+
+The `bounded_eval` binary evaluates a **bounded universe** defined by an absolute box
+`[-B,B]×[-B,B]` and prints a JSON summary:
+
+```bash
+cargo run --release --bin bounded_eval -- tests/golden/scenarios/rrr_b2_mb1_pass.json
+```
+
+Input files are JSON objects with a `scenario` block (golden files also include an `expected`
+block for regression testing):
+
+```json
+{
+  "scenario": {
+    "bound": 2,
+    "move_bound": 1,
+    "move_bound_mode": "inclusive",
+    "pieces": { "white_king": false, "queens": 0, "rooks": 3, "bishops": 0, "knights": 0 },
+    "allow_captures": true,
+    "white_can_pass": true,
+    "remove_stalemates": true
+  }
+}
+```
+
+Scenario JSONs live under `tests/golden/scenarios/` and are also used as golden regression tests
+(Rust-only; no Python required).
+
+## Rust ↔ Python cross-check (optional)
+
+To compare bounded metrics against the Python project’s move/attack semantics, use:
+
+- `tools/crosscheck/run_python_counts.py`
+- `tools/crosscheck/README.md`
+
+Example:
+
+```bash
+ICE_PY_REPO=/path/to/InfiniteChessEndgameScripts \
+  python3 tools/crosscheck/run_python_counts.py --pretty \
+  tests/golden/scenarios/rrr_b2_mb1_pass.json
 ```
 
 ## Export + play a solved bundle (interactive)
@@ -111,6 +169,7 @@ let rules = Rules::new(layout, 23);
 `scenario::CandidateGeneration` controls which black-to-move states are considered “candidates” for trap search:
 
 - `InLinfBound { bound, allow_captures }`: enumerate all canonical placements within an L∞ bound (cheap and great for small piece counts).
+- `InAbsBox { bound, allow_captures }`: enumerate all canonical placements inside an absolute box `[-B,B]×[-B,B]` while tracking the absolute king anchor (`Scenario.track_abs_king=true`).
 - `FromStates { states }`: provide a precomputed list (e.g. from a file or a geometric generator).
 - `ReachableFromStart { max_queue }`: BFS explore reachable states from the required `start` (often far smaller than full enumeration).
 
@@ -192,3 +251,6 @@ The tests include several **known-results** checks that exercise large parts of 
   - maximal inescapable trap size is **169**,
   - tempo trap size is **113**, and
   - the tempo trap contains **no immediate checkmates** (it is a Büchi infinite-play objective).
+
+Golden bounded-universe scenarios live under `tests/golden/scenarios/` and are asserted by
+`tests/golden_absbox_counts.rs`.
